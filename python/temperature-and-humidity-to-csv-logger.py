@@ -9,8 +9,6 @@ import os, sys, Adafruit_DHT, time
 from datetime import datetime, date
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging
-import psycopg2
-import config
  
 sensor                       = Adafruit_DHT.AM2302 #DHT11/DHT22/AM2302
 pin                          = 4
