@@ -8,7 +8,10 @@
 import os, sys, Adafruit_DHT, time
 from datetime import datetime, date
 from apscheduler.schedulers.background import BackgroundScheduler
-
+import logging
+import psycopg2
+import config
+ 
 sensor                       = Adafruit_DHT.AM2302 #DHT11/DHT22/AM2302
 pin                          = 4
 dir_path                     = os.path.dirname(os.path.realpath(__file__))
@@ -24,10 +27,10 @@ sec_between_log_entries      = 60
 latest_humidity              = 0.0
 latest_temperature           = 0.0
 latest_value_datetime        = None
+if (not os.path.exists(dir_path + "/sensor-values")):
+  os.mkdir(dir_path + "/sensor-values")
 
-orig_stdout = sys.stdout
-f = open('/home/pi/.sensor.log', 'w')
-sys.stdout = f
+logging.basicConfig(filename='/home/pi/.sensor.log', level=logging.INFO)
 
 def write_header(file_handle, csv_header):
   file_handle.write(csv_header)
@@ -56,27 +59,27 @@ def write_latest_value():
 f_hist_temp = open_file_ensure_header(hist_temperature_file_path, 'a', csv_header_temperature)
 f_hist_hum  = open_file_ensure_header(hist_humidity_file_path, 'a', csv_header_humidity)
 
-print("Ignoring first 2 sensor values to improve quality...")
+logging.info("Ignoring first 2 sensor values to improve quality...")
 for x in range(2):
   Adafruit_DHT.read_retry(sensor, pin)
 
-print("Creating interval timer. This step takes almost 2 minutes on the Raspberry Pi...")
+logging.info("Creating interval timer. This step takes almost 2 minutes on the Raspberry Pi...")
 #create timer that is called every n seconds, without accumulating delays as when using sleep
 scheduler = BackgroundScheduler()
 scheduler.add_job(write_hist_value_callback, 'interval', seconds=sec_between_log_entries)
 scheduler.start()
-print("Started interval timer which will be called the first time in {0} seconds.".format(sec_between_log_entries));
+logging.info("Started interval timer which will be called the first time in {0} seconds.".format(sec_between_log_entries));
 
 try:
   while True:
     hum, temp = Adafruit_DHT.read_retry(sensor, pin)
     if hum is not None and temp is not None:
       if temp < -40.0 or temp > 80.0:
-        print ("Ignoring out of range temperature: {0:0.1f}*".format(temp))
+        logging.info ("Ignoring out of range temperature: {0:0.1f}*".format(temp))
       else:
         latest_temperature = temp
       if hum < 0.0 or hum > 100.0:
-        print ("Ignoring out of range humidity: {0:0.1f}%".format(hum))
+        logging.info ("Ignoring out of range humidity: {0:0.1f}%".format(hum))
       else:
         latest_humidity = hum
       latest_value_datetime = datetime.today()
@@ -84,6 +87,3 @@ try:
     time.sleep(1)
 except (KeyboardInterrupt, SystemExit):
   scheduler.shutdown()
-  sys.stdout = orig_stdout
-  f.close()
-

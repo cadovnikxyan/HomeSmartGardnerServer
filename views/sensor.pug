@@ -9,9 +9,9 @@ head
   title Refrigerator Sensor
   script(src='https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js')
   script(src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js')
-  script(src='http://d3js.org/d3.v3.min.js')
-  script(src='http://cdnjs.cloudflare.com/ajax/libs/nvd3/1.1.15-beta/nv.d3.min.js')
-  link(rel='stylesheet' href='http://cdnjs.cloudflare.com/ajax/libs/nvd3/1.1.15-beta/nv.d3.css')
+  script(src='https://d3js.org/d3.v3.min.js')
+  script(src='https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.1.15-beta/nv.d3.min.js')
+  link(rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.1.15-beta/nv.d3.css')
   link(rel='stylesheet' href='https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css')
   style.
     body {
@@ -25,10 +25,10 @@ head
     padding-left:10px;padding-right:10px;border:1px solid #DDD;
     }
   script.
-    chartDatetimeFormatter   = d3.time.format("%d.%m.%y - %H:%M"); //see https://github.com/mbostock/d3/wiki/Time-Formatting
-    tableDatetimeFormatter   = d3.time.format("%d.%m.%y - %H:%M:%S"); //see https://github.com/mbostock/d3/wiki/Time-Formatting
-    soapServiceHistDataUrl   = "http://cadovnik.fvds.ru:9999/sensors/historical-sensordata/";
-    soapServiceLatestDataUrl = "http://cadovnik.fvds.ru:9999/sensors/latest-sensordata/";
+    var chartDatetimeFormatter   = d3.time.format("%d.%m.%y - %H:%M"); //see https://github.com/mbostock/d3/wiki/Time-Formatting
+    var tableDatetimeFormatter   = d3.time.format("%d.%m.%y - %H:%M:%S"); //see https://github.com/mbostock/d3/wiki/Time-Formatting
+    var soapServiceHistDataUrl   = document.URL + "/historical-sensordata/";
+    var soapServiceLatestDataUrl = document.URL + "/latest-sensordata/";
   script.
     $(function() {
     $("#fromdate").datepicker({
@@ -60,18 +60,18 @@ head
     });
     });
     function getHistoricalSensordata() {
-    var fromDate   = $("#fromdate").val();
-    var fromTs     = fromDate == "" ? "" : Date.parse(fromDate);
-    var toDate     = $("#todate").val();
-    var oneDayInMs = new Date(1970, 0, 2) - new Date(1970, 0, 1);
-    var toTs       = toDate == "" ? "" : Date.parse(toDate) + oneDayInMs - 1; //increase to end of day
+      var fromDate   = $("#fromdate").val();
+      var fromTs     = fromDate == "" ? "" : Date.parse(fromDate);
+      var toDate     = $("#todate").val();
+      var oneDayInMs = new Date(1970, 0, 2) - new Date(1970, 0, 1);
+      var toTs       = toDate == "" ? "" : Date.parse(toDate) + oneDayInMs - 1; //increase to end of day
     $.ajax({
     url: soapServiceHistDataUrl + "?fromtimestamp=" + fromTs + "&totimestamp=" + toTs
     }).then(function(data) {
-    var chartData = [];
-    data.forEach(function(elem) {
-    var color = elem.sensorKind == 'temperature' ? '#A4C4E8' : elem.sensorKind == 'humidity' ? '#FCDAB0' : '#336600';
-    chartData.push({key: (elem.sensorKind +" " +elem.sensorName), area: true, color: color, values: elem.values});
+      var chartData = [];
+      data.forEach(function(elem) {
+      var color = elem.sensorKind == 'temperature' ? '#A4C4E8' : elem.sensorKind == 'humidity' ? '#FCDAB0' : '#336600';
+      chartData.push({key: (elem.sensorKind +" " +elem.sensorName), area: true, color: color, values: elem.values});
     });
     drawChart(chartData);
     });
@@ -80,12 +80,12 @@ head
     $.ajax({
     url: soapServiceLatestDataUrl
     }).then(function(data) {
-    $('#dynamictable').empty();
-    $('#dynamictable').append('<table></table>');
-    var table = $('#dynamictable').children();
-    table.append("<tr><th>Sensor Kind</th><th>Sensor Name</th><th>Value Time</th><th>Value</th></tr>");
-    data.forEach(function(elem) {
-    table.append("<tr><td>" + elem.sensorKind + "</td><td>" + elem.sensorName + "</td><td>" + tableDatetimeFormatter(new Date(elem.values[0].x)) + "</td><td>" + elem.values[0].y.toFixed(1) + "</td></tr>");
+      $('#dynamictable').empty();
+      $('#dynamictable').append('<table></table>');
+      var table = $('#dynamictable').children();
+      table.append("<tr><th>Sensor Kind</th><th>Sensor Name</th><th>Value Time</th><th>Value</th></tr>");
+      data.forEach(function(elem) {
+      table.append("<tr><td>" + elem.sensorKind + "</td><td>" + elem.sensorName + "</td><td>" + tableDatetimeFormatter(new Date(elem.values[0].x)) + "</td><td>" + elem.values[0].y.toFixed(1) + "</td></tr>");
     });
     });
     }
